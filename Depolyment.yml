@@ -1,0 +1,21 @@
+---
+ - hosts: all
+   become: yes
+   tasks:
+    - name: Download the package and archive
+      unarchive:
+        src: https://releases.wikimedia.org/mediawiki/1.32/mediawiki-1.32.0.tar.gz
+        dest: /var/www
+        remote_src: yes
+        owner: apache
+        group: apache
+    - name: updating http.conf
+      template:
+        src: etc/ssh/sshd_config.j2
+        dest: /etc/ssh/sshd_config
+        owner: root
+        group: root
+        mode: '0600'
+        validate: /usr/sbin/sshd -t -f %s
+        backup: yes
+            

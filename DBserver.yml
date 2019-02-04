@@ -1,0 +1,35 @@
+---
+- hosts: all
+  become: yes
+  gather_facts: true
+  tasks:
+    - name: mysql
+      yum:
+        name: "{{items}}"
+        state: present
+      with_items:
+        - mysql-server 
+        - mysql
+    - name: restart mysql
+      service:
+        name: mysql 
+        enabled: yes
+        state: restarted
+     
+    - name: update mysql root password for all root accounts
+      mysql_user:
+        name: wiki
+        password: {{ mysql_password}}
+        encrypted: yes
+        priv: '*.*:ALL'
+        state: present
+
+    - name: Create a new database with name 'bobdata'
+      mysql_db:
+        name: wikidatabase
+        state: present
+    
+  
+
+
+   
