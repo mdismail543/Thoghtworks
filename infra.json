@@ -1,0 +1,137 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "EC2 and Mysql",
+    "Parameters":{
+              
+        "VPCID": {
+          "Description": "VPCID",
+          "Type": "AWS::EC2::VPC::Id"
+        
+        },
+
+        "AMIID" : {
+            "Description": "AMI ID",
+            "Type":"AWS::EC2::AMI::Id"
+        },
+
+        
+        "SubnetIDs": {
+          "Type": "List<AWS::EC2::Subnet::Id>",
+          "Description": " Subnets"
+        }
+        
+    },
+    "Resources":{
+        
+        "ELBSecurityGroup" : {
+          "Type" : "AWS::EC2::SecurityGroup",
+          "Properties" : {
+            "GroupDescription" : "SecurityDescription for ELB",
+            "SecurityGroupIngress" : [ 
+                { "IpProtocol" : "tcp", "FromPort" : "80", "ToPort" : "80", "CidrIp" : "0.0.0.0/0" }
+            ]
+          }
+        },
+        
+        "EC2InstanceSecurityGroup" : {
+          "Type" : "AWS::EC2::SecurityGroup",
+          "Properties" : {
+            "GroupDescription" : "Secuirty group for EC2",
+            "SecurityGroupIngress" : [ 
+              
+              { "IpProtocol" : "tcp", "SourceSecurityGroupName" : {"Ref" : "ELBSecurityGroup"}, "FromPort" : "80", "ToPort" : "80"  }
+              
+            ]
+            }
+        },
+       
+        "LoadBalancer": {
+           "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
+           "Properties": {
+                "SecurityGroups" : [ 
+                { "Fn::GetAtt" : [ "ELBSecurityGroup", "GroupId" ]}
+                ],
+              "Subnets" : [ 
+                { "Fn::Select" : [ 0, {"Ref": "SubnetIDs"} ] },
+                { "Fn::Select" : [ 1, {"Ref": "SubnetIDs"} ] } 
+                ]
+             }
+        },
+        "Listener": {
+                "Type" : "AWS::ElasticLoadBalancingV2::Listener",
+                "Properties" : {
+                  "DefaultActions" : { "TargetGroupArn" : { "Ref": "TargetGroup" }   ,
+                    "Type" : "Forward"},
+                   "LoadBalancerArn" : { "Ref": "LoadBalancer" },
+                  "Port" : 80,
+                  "Protocol" : "HTTP"
+                  }
+              }
+        },
+
+        "TargetGroup": {
+              "Type" : "AWS::ElasticLoadBalancingV2::TargetGroup",
+                "Properties" : {
+                  "Port" : 80,
+                  "Protocol" : "HTTP",
+                  "Targets" : [{"Id": { "Ref": "EC2Instnace1" }, "Port" : 80}, {"Id":{"Ref": "EC2Instnace2" }, "Port" : 80}],
+                  "VpcId" : { "Ref": "VPCID" }
+                  
+                }
+             
+        },
+
+        
+        "EC2Instnace1": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "KeyName": "devops",
+                "ImageId": { 
+                 "Ref": "AMIID" },
+                 
+                "InstanceType": "t2.micro",
+                "SecurityGroupIds" : [{ "Fn::GetAtt" : [ "ELBSecurityGroup", "GroupId" ]}],
+                "SubnetId": {
+                     "Fn::Select" : [ 0, {"Ref": "SubnetIDs"} ] }
+            }    
+        },
+        "EC2Instnace2": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "KeyName": "devops",
+                "ImageId": { 
+                 "Ref": "AMIID" },
+                 
+                "InstanceType": "t2.micro",
+                "SecurityGroupIds" : [{ "Fn::GetAtt" : [ "ELBSecurityGroup", "GroupId" ]}],
+                "SubnetId": {
+                     "Fn::Select" : [ 0, {"Ref": "SubnetIDs"} ] }
+                }    
+        },
+        "EC2InstnaceDB": {
+    "Type": "AWS::EC2::Instance",
+    "Properties": {
+        "KeyName": "devops",
+        "ImageId": { 
+         "Ref": "AMIID" },
+         
+        "InstanceType": "t2.micro",
+        "SecurityGroupIds" : [{ "Fn::GetAtt" : [ "ELBSecurityGroup", "GroupId" ]}],
+        "SubnetId": {
+             "Fn::Select" : [ 1, {"Ref": "SubnetIDs"} ] }
+    }   
+}
+}  
+
+
+
+     
+         
+
+     
+
+   
+                   
+               
+        
+ 
